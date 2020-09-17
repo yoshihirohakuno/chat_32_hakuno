@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<title>落書きChat</title>
+</head>
+<body>
+
+<!-- コンテンツ表示画面 -->
+
+<div id=header>
+  <h1 class=h_h1>落書きCHAT</h1>
+</div>
+
+<div>
+    <div id="output" style="height:300px; overflow:auto; direction:rtl;"></div>
+    <div><input type="text" id="uname" placeholder="名前を入力"> </div>
+    <div>
+        <textarea id="text" placeholder="コメントを入力" cols="30" rows="10"></textarea>
+        <button id="send_btn">送信</button>
+</div>
+
+<!--  キャンバス要素　-->
+    <p class="can_p">キャンバス(落書きをタイムラインで並べられるようになる予定)</p>
+    <nav>
+      <button id="clear_btn">クリア</button>
+      <button id="save_btn">保存</button>
+    </nav>
+      <canvas id="drowarea" width="300" height="300" ></canvas>
+    
+    
+    <div class=pic>
+      <div class="imgs" data-img="0"><img src="imgs/buke.png" width="100"></div>
+      <div class="imgs" data-img="1"><img src="imgs/tuku.jpg" width="100"></div>
+      <div class="imgs" data-img="2"><img src="imgs/caram.png" width="100"></div>
+    </div>
+
+    
+</div>
+
+
+
+
+
+<!--/ コンテンツ表示画面 -->
+
+
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- JQuery -->
+
+<!--** 以下Firebase **-->
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+  // Your web app's Firebase configuration
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const ref = firebase.database().ref(); //.ref()はユニークキーを自動で振ってくれという意味
+
+
+
+　//関数定義
+function send(){
+    let now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth()+1;
+    let date = now.getDate();
+    let hour = now.getHours();
+    let min = now.getMinutes();
+    let sec = now.getSeconds();
+
+    const time = year+"/"+month+"/"+date+" "+hour+":"+min+":"+sec;
+    const uname = $("#uname").val();
+    const text  = $("#text").val();
+    const icon = d;
+    const msg = {
+        uname:uname,
+        text:text,
+        time:time,
+        icon:icon
+    };
+    $("#uname").val("");
+    $("#text").val("");
+
+    ref.push(msg);  //set=決まった名前、push=ユニーク
+    $("#output").scrollTop($("#output")[0].scrollHeight)
+    }
+
+　//文字を送信
+  $("#send").on("click",function(){
+    send();
+
+  });
+
+  // アイコン処理
+  let d = 0;
+  const img = ["buke.png","tuku.jpg","caram.png"];
+  $(".imgs").on("click",function(){
+    send();
+    d = $(this).attr("data-img");
+
+  });
+
+  //受信処理
+  ref.on("child_added",function(data){
+      const v = data.val(); //送信されたオブジェクトを取得
+      const k = data.key;  //ユニークキーの取得
+      const h = '<p> <img src="imgs/'+img[v.icon]+'" width="50"><br>'+v.uname+'<br><p class=te>'+v.text+'</p><br><p class=ti>'+v.time+'</p></p>';
+      $("#output").append( h );
+    
+  });
+
+　//イベント情報取得 
+    $("#text").on("keydown",function(e){
+        if(e.keyCode == 13){
+        send();
+        }
+    });
+
+  //--------キャンバス要素--------- 
+  //初期値（変数letで宣言）
+    let canvas_mouse_event = false; //スイッチ[true=線を引く,false=引かない]
+    let oldX = 0; //一つ前の座標を代入するための変数
+    let oldY = 0; //一つ前の座標を代入するための変数
+    let bold_line = 10; //ラインの太さをここで指定
+    let color = "#cccccc"; //ラインの色をここで指定
+
+    const can =　$("#drowarea")[0]; 
+    const ctx = can.getContext("2d");
+
+    $(can).on("mousedown",function(e){
+        console.log(e);
+        oldY = e.offsetY;
+        oldX = e.offsetX;
+        canvas_mouse_event = true;
+    });
+
+    $(can).on("mousemove",function(e){
+        if(canvas_mouse_event==true){
+            const px = e.offsetX;
+            const py = e.offsetY;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = bold_line;
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(oldX,oldY);
+            ctx.lineTo(px,py);
+            ctx.stroke();
+            oldX = px;
+            oldY = py;
+
+        }
+    });
+
+    $(can).on("mouseup",function(){
+        canvas_mouse_event = false;
+    });
+
+    $("#clear_btn").on("click",function(){
+        ctx.beginPath();
+        ctx.clearRect(0,0, can.width, can.height);
+    });
+
+    // canvasを画像で保存
+    $("#save_btn").click(function(){
+      drowarea = document.getElementById('drowarea');
+      var base64 = drowarea.toDataURL("image/jpeg");
+      document.getElementById("#save_btn").href = base64;
+      console.log();
+    });
+
+</script>
+
+
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
